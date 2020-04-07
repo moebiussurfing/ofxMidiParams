@@ -113,5 +113,16 @@ protected:
     bool bTryReconnect = false;
     
     string mXmlFilePath = "";
+
+	//-
+
+	ofColor colorFill;
+	string path_GLOBAL = "ofxMidiParams";
+	void setPathGlobal(string s)
+	{
+		path_GLOBAL = s;
+	}
+	ofTrueTypeFont myFont;
+	int fontSize;
     
 };

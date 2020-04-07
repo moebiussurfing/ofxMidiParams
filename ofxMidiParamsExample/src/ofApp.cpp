@@ -22,7 +22,7 @@ void ofApp::setup(){
     kParams.add( k7.set("K7", 0.5, 0.0, 1.0 ));
     kParams.add( k8.set("K8", 0.5, 0.0, 1.0 ));
     
-    mMidiParams.connect(0, true);
+    mMidiParams.connect(1, true);
     mMidiParams.add(padParams);
     mMidiParams.add(kParams);
     
