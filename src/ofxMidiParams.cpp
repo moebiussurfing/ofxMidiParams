@@ -219,7 +219,7 @@ void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
 		ofxMidiMessage& message = midiMessages[i];
 		string sstatus = ofxMidiMessage::getStatusString(message.status);
 		if (message.status == MIDI_CONTROL_CHANGE) {
-			sstatus = "Control";
+			sstatus = "CC";
 		}
 		ss << sstatus;
 		int treq = 10 - sstatus.length();
@@ -227,16 +227,16 @@ void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
 			ss << " ";
 		}
 		if (message.status < MIDI_SYSEX) {
-			ss << "chan: " << message.channel;
+			ss << "ch:" << message.channel;
 			if (message.status == MIDI_CONTROL_CHANGE) {
-				ss << " ctl: " << message.control << " val: " << message.value;// << " pitch: " << message.pitch;
+				ss << " ctl:" << message.control << " val:" << message.value;// << " pitch: " << message.pitch;
 			}
 			else if (message.status == MIDI_PITCH_BEND) {
-				ss << "\tval: " << message.value;
+				ss << "\tval:" << message.value;
 			}
 			else {
-				ss << "\tpitch: " << message.pitch;// << " value: "<<message.value;// << " control: " << message.control
-				ss << "\tvel: " << message.velocity;
+				ss << "\tpitch:" << message.pitch;// << " value: "<<message.value;// << " control: " << message.control
+				ss << "\tvel:" << message.velocity;
 			}
 		}
 		ss << endl;
@@ -264,7 +264,7 @@ void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
 		mSelectedParam->displayMidiName = tname;//ofSystemTextBoxDialog("MIDI Display name.", tname );
 		mSelectedParam->bNeedsTextPrompt = true;
 		mSelectedParam->bListening = false;
-		//        mSelectedParam.reset();
+		//mSelectedParam.reset();
 	}
 
 	int tid = getId(amsg);
@@ -481,8 +481,10 @@ void ofxMidiParams::draw() {
 			hstring = "No MIDI Device.";
 		}
 
+		//header
 		ofSetColor(30);
 		ofDrawRectangle(mHeaderRect);
+		//label
 		ofSetColor(225);
 		if (myFont.isLoaded())
 		{
@@ -513,6 +515,7 @@ void ofxMidiParams::draw() {
 			ofDrawBitmapString("save", mSaveBtnRect.x + 4, mSaveBtnRect.getCenter().y + 4);
 		}
 
+		//bg log
 		ofSetColor(10);
 		ofDrawRectangle(mMessageRect);
 		string messStr = mMidiMessageHistoryStr;
@@ -520,6 +523,7 @@ void ofxMidiParams::draw() {
 			messStr = "No MIDI messages received.";
 
 		}
+		//text log
 		ofSetColor(200);
 		if (myFont.isLoaded())
 		{
@@ -530,6 +534,7 @@ void ofxMidiParams::draw() {
 			ofDrawBitmapString(messStr, mMessageRect.x + 8, mMessageRect.y + 18);
 		}
 
+		//assigned params
 		for (int i = 0; i < mAssocParams.size(); i++) {
 			ofSetColor(20);
 			auto& ma = mAssocParams[i];
@@ -545,6 +550,7 @@ void ofxMidiParams::draw() {
 				ofDrawRectangle(ma->drawRect);
 			}
 
+			//left param label
 			ofSetColor(255);
 			float texty = ma->drawRect.y + 14;
 			if (myFont.isLoaded())
@@ -556,6 +562,7 @@ void ofxMidiParams::draw() {
 				ofDrawBitmapString(mParamsGroup.getName(i), 0.0 + 8, texty);
 			}
 
+			//right midi item value
 			if (ma->displayMidiName != "") {
 				float sw = ma->displayMidiName.length() * 8.f;
 				if (myFont.isLoaded())
@@ -567,6 +574,7 @@ void ofxMidiParams::draw() {
 					ofDrawBitmapString(ma->displayMidiName, ma->drawRect.getRight() - sw - 4, texty);
 				}
 			}
+			//midi learn
 			else if (ma->bListening) {
 				string tstr = "Listening";
 				float sw = tstr.length() * 8.f;
