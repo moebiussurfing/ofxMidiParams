@@ -14,11 +14,13 @@ ofxMidiParams::ofxMidiParams() {
 
 	//-
 
+	//custom colors
 	//colorFill = ofColor::yellowGreen;
 	colorFill = 0;
 
 	//-
 
+	//custom font
 	string path;
 	path = path_GLOBAL + "/" + "fonts/" + "overpass-mono-bold.otf";
 	fontSize = 9;
