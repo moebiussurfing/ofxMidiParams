@@ -177,7 +177,7 @@ void ofxMidiParams::update(ofEventArgs& args) {
 		}
 
 
-		//        cout << "bopen: " << bopen << " port: " << midiIn.getPort() << " | " << ofGetFrameNum() << endl;
+		//cout << "bopen: " << bopen << " port: " << midiIn.getPort() << " | " << ofGetFrameNum() << endl;
 
 		if (!bConnected && bTryReconnect) {
 			if (mDesiredDeviceNameToOpen != "") {
@@ -250,7 +250,7 @@ void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
 		mSelectedParam->midiId = getId(amsg);
 		string tname = "default";
 		if (amsg.status < MIDI_SYSEX) {
-			//            ss << "chan: " << message.channel;
+			//ss << "chan: " << message.channel;
 			if (amsg.status == MIDI_CONTROL_CHANGE) {
 				tname = "Control" + ofToString(amsg.control, 0);
 			}
@@ -475,6 +475,7 @@ void ofxMidiParams::draw() {
 	ofPushMatrix(); {
 		ofTranslate(pos.x, pos.y);
 
+		//device name
 		string hstring = mDesiredDeviceNameToOpen;
 		if (hstring == "") {
 			hstring = "No MIDI Device.";
@@ -492,12 +493,14 @@ void ofxMidiParams::draw() {
 			ofDrawBitmapString(hstring, mHeaderRect.x + 4, mHeaderRect.y + mHeaderRect.height / 2 + 6);
 		}
 
+		//green circle
 		ofSetColor(200, 20, 70);
 		if (isConnected()) {
 			ofSetColor(20, 210, 60);
 		}
 		ofDrawCircle(mHeaderRect.width - (mHeaderRect.height / 2), mHeaderRect.height / 2, mHeaderRect.height / 4);
 
+		//save button
 		ofSetColor(80);
 		ofDrawRectangle(mSaveBtnRect);
 		ofSetColor(200);
@@ -590,8 +593,8 @@ int ofxMidiParams::_getDesiredPortToOpen() {
 	}
 	vector<string> tportNames = midiIn.getInPortList();
 	for (int i = 0; i < tportNames.size(); i++) {
-		//        cout << i << " port name: " << tportNames[i] << endl;
-				// lets first try a hard match and then we can try a loose one //
+		//cout << i << " port name: " << tportNames[i] << endl;
+		// lets first try a hard match and then we can try a loose one //
 		if (tportNames[i] == mDesiredDeviceNameToOpen) {
 			return i;
 		}
