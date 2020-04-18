@@ -68,8 +68,16 @@ public:
     
     void draw();
     
+	//added api
     void setPosition( float ax, float ay ) { pos = glm::vec2(ax, ay); }
-    
+	glm::vec2 getPosition() {
+		return pos;
+	};
+	float getWidth()
+	{
+		return width;
+	};
+
     void enableMouseEvents();
     void disableMouseEvents();
     
