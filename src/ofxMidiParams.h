@@ -12,6 +12,8 @@
 class ofxMidiParams : public ofxMidiListener {
 public:
     
+	void setup();
+
     enum ParamType {
         PTYPE_FLOAT=0,
         PTYPE_INT,

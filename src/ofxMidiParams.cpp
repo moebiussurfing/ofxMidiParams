@@ -11,7 +11,13 @@
 ofxMidiParams::ofxMidiParams() {
 	enableMouseEvents();
 	_updatePositions();
+}
 
+//TODO: splitted-out funtion to avoid crash...
+
+//--------------------------------------------------------------
+void ofxMidiParams::setup()
+{
 	//-
 
 	//custom colors
@@ -21,8 +27,8 @@ ofxMidiParams::ofxMidiParams() {
 	//-
 
 	//custom font
-	string path;
-	path = path_GLOBAL + "/" + "fonts/" + "overpass-mono-bold.otf";
+	std::string path;
+	path = ofToString(path_GLOBAL + "/" + "fonts/" + "overpass-mono-bold.otf");
 	fontSize = 9;
 	myFont.loadFont(path, fontSize);
 	if (myFont.isLoaded())
@@ -33,7 +39,6 @@ ofxMidiParams::ofxMidiParams() {
 	{
 		ofLogError("ofxMidiParams") << "Font '" << path << "' NOT FOUND!";
 	}
-
 }
 
 //--------------------------------------------------------------
