@@ -7,6 +7,7 @@
 
 #pragma once
 #include "ofMain.h"
+
 #include "ofxMidi.h"
 
 class ofxMidiParams : public ofxMidiListener {
@@ -104,7 +105,11 @@ protected:
     bool bHasUpdateEvent = false;
     
     vector< shared_ptr<MidiParamAssoc> > mAssocParams;
-    
+
+	//TODO:
+	void Changed_Controls(ofAbstractParameter &e);
+	ofxMidiOut midiOut;
+
     ofParameterGroup mParamsGroup;
     string mMidiMessageHistoryStr;
     bool bHasMouseEvents = false;

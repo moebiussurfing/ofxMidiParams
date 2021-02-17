@@ -11,6 +11,9 @@
 ofxMidiParams::ofxMidiParams() {
 	enableMouseEvents();
 	_updatePositions();
+
+	//TODO:
+	setup();
 }
 
 //TODO: splitted-out funtion to avoid crash...
@@ -28,16 +31,90 @@ void ofxMidiParams::setup()
 
 	//custom font
 	std::string path;
-	path = ofToString(path_GLOBAL + "/" + "fonts/" + "overpass-mono-bold.otf");
+	path = "assets/fonts/";
+	path += "overpass-mono-bold.otf";
+	path = ofToString(path);
+	//path = ofToString(path_GLOBAL + "/" + "fonts/" + "overpass-mono-bold.otf");
+
 	fontSize = 9;
 	myFont.loadFont(path, fontSize);
 	if (myFont.isLoaded())
 	{
-		ofLogNotice("ofxMidiParams") << "Loaded font '" << path << "'";
+		ofLogNotice(__FUNCTION__) << "Loaded font '" << path << "'";
 	}
 	else
 	{
-		ofLogError("ofxMidiParams") << "Font '" << path << "' NOT FOUND!";
+		ofLogError(__FUNCTION__) << "Font '" << path << "' NOT FOUND!";
+	}
+
+	//--
+
+	//TODO: 
+	//midi out
+
+	mParamsGroup.setName("ofxMidiParams");
+	ofAddListener(mParamsGroup.parameterChangedE(), this, &ofxMidiParams::Changed_Controls);
+
+	// connect
+	midiOut.listOutPorts();
+	midiOut.openPort(2); // by number
+	//midiOut.openPort("IAC Driver Pure Data In"); // by name
+	//midiOut.openVirtualPort("ofxMidiOut"); // open a virtual port
+
+	ofLogNotice(__FUNCTION__) << "MidiOut";
+	ofLogNotice(__FUNCTION__) << "Connected to Port " << midiOut.getPort();
+	ofLogNotice(__FUNCTION__) << midiOut.getName();
+	ofLogNotice(__FUNCTION__) << (midiOut.isVirtual() ? "is Virtual" : "Not Virtual");
+}
+
+//--------------------------------------------------------------
+void ofxMidiParams::Changed_Controls(ofAbstractParameter &e)
+{
+	std::string name = e.getName();
+
+	ofLogNotice(__FUNCTION__) << name << " : " << e;
+
+	//----
+
+	for (int i = 0; i < mAssocParams.size(); i++) {//iterate all added parameters...
+
+		string n1 = mAssocParams[i]->xmlName;
+		string n2 = mParamsGroup.getName(i);
+		//ofLogNotice(__FUNCTION__) << "n1:" << n1;
+		//ofLogNotice(__FUNCTION__) << "n2:" << n2;
+
+		//auto& ma = mAssocParams[i];
+		//float val = getParamValuePct(ma);
+
+		if (n1 == name)
+		{
+			auto &aparam = mParamsGroup.get(n2);
+
+			//TODO:
+			//only bools/notes implemented. 
+			//bc I have only an Akai mpd218 with illuminated toggles. 
+			//not motorized/illuminated knobs. so i don't need midi cc's.
+
+			if (aparam.type() == typeid(ofParameter<bool>).name()) {
+				ofParameter<bool> b = aparam.cast<bool>();
+
+				int pitch = mAssocParams[i]->midiId - 512;
+				//auto type2 = mAssocParams[i]->ptype;//bool
+				//auto name2 = mAssocParams[i]->displayMidiName;
+
+				int ch = 1;
+				if (b.get()) {
+					midiOut.sendNoteOn(ch, pitch, 127);
+					ofLogNotice() << "noteOn: " << pitch;
+				}
+				else {
+					midiOut.sendNoteOff(ch, pitch, 0);
+					ofLogNotice() << "noteOff: " << pitch;
+				}
+
+				return;
+			}
+		}
 	}
 }
 
@@ -49,6 +126,10 @@ ofxMidiParams::~ofxMidiParams() {
 		ofRemoveListener(ofEvents().update, this, &ofxMidiParams::update);
 	}
 	bHasUpdateEvent = false;
+
+	ofRemoveListener(mParamsGroup.parameterChangedE(), this, &ofxMidiParams::Changed_Controls);
+	// clean up
+	midiOut.closePort();
 }
 
 //--------------------------------------------------------------
@@ -89,6 +170,8 @@ bool ofxMidiParams::connect(int aport, bool abRetryConnection) {
 
 //--------------------------------------------------------------
 bool ofxMidiParams::connect(string aDeviceName, bool abRetryConnection) {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	mDesiredDeviceNameToOpen = aDeviceName;
 	int tport = _getDesiredPortToOpen();
 	return connect(tport, abRetryConnection);
@@ -96,21 +179,26 @@ bool ofxMidiParams::connect(string aDeviceName, bool abRetryConnection) {
 
 //--------------------------------------------------------------
 void ofxMidiParams::disconnect() {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (bConnected) {
 		midiIn.closePort();
 		midiIn.removeListener(this);
 	}
 	bConnected = false;
-
 }
 
 //--------------------------------------------------------------
 bool ofxMidiParams::isConnected() {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	return bConnected && midiIn.isOpen();
 }
 
 //--------------------------------------------------------------
 bool ofxMidiParams::save(string aXmlFilepath) {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (aXmlFilepath != "") {
 		mXmlFilePath = aXmlFilepath;
 	}
@@ -141,6 +229,8 @@ bool ofxMidiParams::save(string aXmlFilepath) {
 
 //--------------------------------------------------------------
 bool ofxMidiParams::load(string aXmlFilepath) {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	mXmlFilePath = aXmlFilepath;
 	ofXml txml;
 	if (txml.load(mXmlFilePath)) {
@@ -169,6 +259,8 @@ bool ofxMidiParams::load(string aXmlFilepath) {
 void ofxMidiParams::update(ofEventArgs& args) {
 	uint64_t emillis = ofGetElapsedTimeMillis();
 	if (emillis >= mNextCheckMillis) {
+		//ofLogWarning() << __FUNCTION__ << " ";
+
 		vector<string> tportNames = midiIn.getInPortList();
 		bool bopen = midiIn.isOpen();
 		if (tportNames.size() == 0) {
@@ -213,6 +305,7 @@ void ofxMidiParams::update(ofEventArgs& args) {
 #pragma mark - MIDI Messages
 //--------------------------------------------------------------
 void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
+	//ofLogWarning() << __FUNCTION__ << " ";
 
 	midiMessages.push_back(amsg);
 
@@ -254,6 +347,8 @@ void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
 
 
 	if (mSelectedParam) {
+		//ofLogWarning() << __FUNCTION__ << " ";
+
 		mSelectedParam->midiId = getId(amsg);
 		string tname = "default";
 		if (amsg.status < MIDI_SYSEX) {
@@ -277,6 +372,8 @@ void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
 	int tid = getId(amsg);
 	// see if we have an assoc //
 	for (int i = 0; i < mAssocParams.size(); i++) {
+		//ofLogWarning() << __FUNCTION__ << " ";
+
 		auto& ma = mAssocParams[i];
 		if (ma->midiId == tid) {
 			if (amsg.status == MIDI_CONTROL_CHANGE) {
@@ -295,9 +392,14 @@ void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
 
 //--------------------------------------------------------------
 void ofxMidiParams::setParamValue(shared_ptr<MidiParamAssoc>& am, float avaluePct) {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (am->ptype == PTYPE_FLOAT) {
 		ofParameter<float> f = mParamsGroup.getFloat(am->paramIndex);
 		f = f.getMin() + ofClamp(avaluePct, 0, 1) * (f.getMax() - f.getMin());
+
+		////TODO: this gets when incomming midi 
+		//cout << "setParamValue f: " << f << endl;
 	}
 	else if (am->ptype == PTYPE_BOOL) {
 		ofParameter<bool> f = mParamsGroup.getBool(am->paramIndex);
@@ -308,15 +410,20 @@ void ofxMidiParams::setParamValue(shared_ptr<MidiParamAssoc>& am, float avaluePc
 		ofParameter<int> f = mParamsGroup.getInt(am->paramIndex);
 		f = (float)f.getMin() + ofClamp(avaluePct, 0, 1) * (float)(f.getMax() - f.getMin());
 	}
+
 }
 
 //--------------------------------------------------------------
 float ofxMidiParams::getParamValue(shared_ptr<MidiParamAssoc>& am) {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (am->ptype == PTYPE_FLOAT) {
 		return mParamsGroup.getFloat(am->paramIndex);
 	}
 	else if (am->ptype == PTYPE_BOOL) {
 		ofParameter<bool> f = mParamsGroup.getBool(am->paramIndex);
+		//TODO: this gets when incomming midi 
+		//cout << "getParamValue f: " << f << endl;
 		return (f == true ? 1.f : 0.0);
 	}
 	else if (am->ptype == PTYPE_INT) {
@@ -327,16 +434,24 @@ float ofxMidiParams::getParamValue(shared_ptr<MidiParamAssoc>& am) {
 
 //--------------------------------------------------------------
 float ofxMidiParams::getParamValue(const shared_ptr<MidiParamAssoc>& am) const {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (am->ptype == PTYPE_FLOAT) {
 		ofParameter<float> f = mParamsGroup.getFloat(am->paramIndex);
+		//TODO: this gets when incomming midi 
+		//cout << "getParamValue f: " << f << endl;
 		return f;
 	}
 	else if (am->ptype == PTYPE_BOOL) {
 		ofParameter<bool> f = mParamsGroup.getBool(am->paramIndex);
+		//TODO: this gets when incomming midi 
+		//cout << "getParamValue f: " << f << endl;
 		return (f == true ? 1.f : 0.0);
 	}
 	else if (am->ptype == PTYPE_INT) {
 		ofParameter<int> f = mParamsGroup.getInt(am->paramIndex);
+		//TODO: this gets when incomming midi 
+		//cout << "getParamValue f: " << f << endl;
 		return f;
 	}
 	return 0.0;
@@ -344,6 +459,8 @@ float ofxMidiParams::getParamValue(const shared_ptr<MidiParamAssoc>& am) const {
 
 //--------------------------------------------------------------
 float ofxMidiParams::getParamValuePct(shared_ptr<MidiParamAssoc>& am) {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (am->ptype == PTYPE_FLOAT) {
 		ofParameter<float> f = mParamsGroup.getFloat(am->paramIndex);
 		return (f - f.getMin()) / (f.getMax() - f.getMin());
@@ -361,6 +478,8 @@ float ofxMidiParams::getParamValuePct(shared_ptr<MidiParamAssoc>& am) {
 
 //--------------------------------------------------------------
 float ofxMidiParams::getParamValuePct(const shared_ptr<MidiParamAssoc>& am) const {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (am->ptype == PTYPE_FLOAT) {
 		ofParameter<float> f = mParamsGroup.getFloat(am->paramIndex);
 		return (f - f.getMin()) / (f.getMax() - f.getMin());
@@ -378,6 +497,8 @@ float ofxMidiParams::getParamValuePct(const shared_ptr<MidiParamAssoc>& am) cons
 
 //--------------------------------------------------------------
 int ofxMidiParams::getId(ofxMidiMessage& amess) {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (amess.control > 0) return amess.control;
 	if (amess.pitch > 0) return 512 + amess.pitch;
 	return amess.pitch + 512.f * (amess.control + 1);
@@ -410,6 +531,8 @@ void ofxMidiParams::addParam(ofAbstractParameter& aparam) {
 	auto mac = make_shared<ofxMidiParams::MidiParamAssoc>();
 	mac->paramIndex = mParamsGroup.size();
 
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (aparam.type() == typeid(ofParameter<int>).name()) {
 		mac->ptype = PTYPE_INT;
 		ofParameter<int> ti = aparam.cast<int>();
@@ -435,7 +558,7 @@ void ofxMidiParams::addParam(ofAbstractParameter& aparam) {
 		}
 	}
 	if (mac->ptype == PTYPE_UNKNOWN) {
-		ofLogNotice("ofxMidiParams :: addParam : unsupported param type");
+		//ofLogNotice("ofxMidiParams :: addParam : unsupported param type");
 		return;
 	}
 
@@ -444,10 +567,18 @@ void ofxMidiParams::addParam(ofAbstractParameter& aparam) {
 	mParamsGroup.add(aparam);
 	mAssocParams.push_back(mac);
 	_updatePositions();
+
+	//-
+
+	////TODO:
+	//ofRemoveListener(mParamsGroup.parameterChangedE(), this, &ofxMidiParams::Changed_Controls);
+	//ofAddListener(mParamsGroup.parameterChangedE(), this, &ofxMidiParams::Changed_Controls);
 }
 
 //--------------------------------------------------------------
 void ofxMidiParams::_updatePositions() {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	mHeaderRect.set(0, 0, width, 24.f);
 	mSaveBtnRect.set(mHeaderRect.getRight() - 70, 4, 40, mHeaderRect.height - 8);
 	mMessageRect.set(0, mHeaderRect.getBottom() + 2, width, 16 * 6);
@@ -487,6 +618,7 @@ void ofxMidiParams::draw() {
 		if (hstring == "") {
 			hstring = "No MIDI Device.";
 		}
+		hstring = "MIDI IN: " + hstring;
 
 		//header
 		ofSetColor(30);
@@ -602,6 +734,8 @@ void ofxMidiParams::draw() {
 
 //--------------------------------------------------------------
 int ofxMidiParams::_getDesiredPortToOpen() {
+	//ofLogWarning() << __FUNCTION__ << " ";
+
 	if (mDesiredDeviceNameToOpen == "") {
 		ofLogNotice("ofxMidiParams :: desired device not found.");
 		return -1;

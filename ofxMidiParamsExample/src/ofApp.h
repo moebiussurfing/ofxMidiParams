@@ -1,6 +1,8 @@
 #pragma once
 #include "ofMain.h"
+
 #include "ofxMidiParams.h"
+#include "ofxGui.h"
 
 class ofApp : public ofBaseApp{
 public:
@@ -27,4 +29,5 @@ public:
     
     ofxMidiParams mMidiParams;
 		
+	ofxPanel gui;
 };

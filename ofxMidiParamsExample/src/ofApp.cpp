@@ -37,6 +37,12 @@ void ofApp::setup(){
     // the next MIDI message will be used for mapping to that parameter.
     
     mMidiParams.load("example-midi-params.xml");
+
+	//--
+
+	//test midi out
+	gui.setup();
+	gui.add(padParams);
 }
 
 //--------------------------------------------------------------
@@ -74,7 +80,6 @@ void ofApp::draw(){
             ofFill();
             
             tx += trect.width + 10.f;
-            
         }
         
         ofTranslate( 75, 150 );
@@ -108,19 +113,26 @@ void ofApp::draw(){
                 
             } ofPopMatrix();
             
-            
-            
             tx += 150 + 10.f;
-            
         }
     } ofPopMatrix();
     
     mMidiParams.draw();
+
+	gui.draw();
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    
+	//test midi out
+	if (key == '1') pad1 = !pad1;
+	if (key == '2') pad2 = !pad2;
+	if (key == '3') pad3 = !pad3;
+	if (key == '4') pad4 = !pad4;
+	if (key == '5') pad5 = !pad5;
+	if (key == '6') pad6 = !pad6;
+	if (key == '7') pad7 = !pad7;
+	if (key == '8') pad8 = !pad8;
 }
 
 //--------------------------------------------------------------
