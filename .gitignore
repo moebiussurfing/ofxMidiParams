@@ -552,3 +552,5 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+ofxMidiParamsExample/bin/data/ofxMidiParams/Midi-Params.xml
+ofxMidiParamsExample/bin/data/ofxMidiParams/Midi-Ports.xml

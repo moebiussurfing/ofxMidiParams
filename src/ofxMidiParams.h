@@ -22,8 +22,8 @@ public:
 private:
 	std::string path_Global;
 	std::string path_Ports;
+	std::string path_AppState;
 	std::string path_ParamsList;
-	//std::string path_GLOBAL = "ofxMidiParams";
 
 private:
 	enum ParamType {
@@ -57,16 +57,19 @@ private:
 	void Changed_Controls_MidiPorts(ofAbstractParameter &e);
 	
 	ofParameterGroup params_MidiPorts{ "Midi" };
+	ofParameterGroup params_AppState{ "AppState" };
 
 	ofParameter<int> midiIn_Port{ "Midi In", 0, 0, 10 };
 	ofParameter<int> midiOut_Port{ "Midi Out", 2, 0, 10 };
 	ofParameter<std::string> midiIn_Port_name{ "In" , ""};
 	ofParameter<std::string> midiOut_Port_name{ "Out", "" };
 	ofParameter<glm::vec2> posGui{ "Position GUI", glm::vec2(10,10), glm::vec2(0,0), glm::vec2(1920,1080) };
-	ofParameter<bool> ShowGui{ "Show Internal", true };
-	ofParameter<bool> bVisible{ "Show Gui", true };
+	ofParameter<bool> bShowGuiInternal{ "Show Internal", true };
 	ofParameter<bool>  bAutoName{ "Auto Name Learn", true };
 	ofParameter<bool> bMinimize{ "Minimize", false};
+
+public:
+	ofParameter<bool> bShowGui{ "SHOW MIDI PARAMS", true };
 
 public:
 	bool connect();
@@ -77,6 +80,7 @@ public:
 
 private:
 	bool save(string aXmlFilepath = "");
+public:
 	bool load(string aXmlFilepath);
 
 private:

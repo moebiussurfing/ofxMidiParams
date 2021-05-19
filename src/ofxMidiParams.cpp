@@ -28,6 +28,7 @@ void ofxMidiParams::setup()
 {
 	path_Global = "ofxMidiParams/";
 	path_Ports = path_Global + "Midi-Ports.xml";
+	path_AppState = path_Global + "AppState.xml";
 	path_ParamsList = path_Global + "Midi-Params.xml";
 
 	//-
@@ -43,11 +44,16 @@ void ofxMidiParams::setup()
 	//custom font
 	std::string path;
 	path = "assets/fonts/";
-	path += "overpass-mono-bold.otf";
+
+	//fontSize = 9;
+	//path += "overpass-mono-bold.otf";
+	
+	fontSize = 8;
+	path += "telegrama_render.otf";
+
 	//path = ofToString(path);
 	//path = ofToString(path_GLOBAL + "/" + "fonts/" + "overpass-mono-bold.otf");
 
-	fontSize = 9;
 	myFont.loadFont(path, fontSize);
 	if (myFont.isLoaded())
 	{
@@ -60,21 +66,23 @@ void ofxMidiParams::setup()
 
 	//--
 
-	bVisible.setSerializable(false);
-	midiOut_Port_name.setSerializable(false);
-	midiIn_Port_name.setSerializable(false);
+	bShowGui.setSerializable(false);
+	//midiOut_Port_name.setSerializable(false);//to display on xml file only...
+	//midiIn_Port_name.setSerializable(false);
 
 	params_MidiPorts.add(midiIn_Port);
 	params_MidiPorts.add(midiIn_Port_name);
 	params_MidiPorts.add(midiOut_Port);
 	params_MidiPorts.add(midiOut_Port_name);
-	params_MidiPorts.add(bAutoName);
-	params_MidiPorts.add(posGui);
-	params_MidiPorts.add(ShowGui);
-	params_MidiPorts.add(bVisible);
-	params_MidiPorts.add(bMinimize);
+
+	params_AppState.add(bAutoName);
+	params_AppState.add(posGui);
+	params_AppState.add(bShowGuiInternal);
+	params_AppState.add(bShowGui);
+	params_AppState.add(bMinimize);
 
 	ofAddListener(params_MidiPorts.parameterChangedE(), this, &ofxMidiParams::Changed_Controls_MidiPorts);
+	ofAddListener(params_AppState.parameterChangedE(), this, &ofxMidiParams::Changed_Controls_MidiPorts);
 
 	gui.setup("ofxMidiParams");
 	gui.add(params_MidiPorts);
@@ -108,6 +116,7 @@ void ofxMidiParams::startup()
 	ofLogNotice(__FUNCTION__);
 
 	ofxSurfingHelpers::loadGroup(params_MidiPorts, path_Ports);
+	ofxSurfingHelpers::loadGroup(params_AppState, path_AppState);
 
 	//setPosition(ofGetWidth() - 320, 20);
 
@@ -234,7 +243,9 @@ ofxMidiParams::~ofxMidiParams() {
 
 	posGui = getPosition();
 	ofxSurfingHelpers::saveGroup(params_MidiPorts, path_Ports);
-}
+	ofxSurfingHelpers::saveGroup(params_AppState, path_AppState);
+}	
+
 
 //--------------------------------------------------------------
 bool ofxMidiParams::connect()
@@ -725,22 +736,23 @@ void ofxMidiParams::_updatePositions() {
 
 //--------------------------------------------------------------
 bool ofxMidiParams::isVisible() {
-	return bVisible;
+	return bShowGui;
 }
 
 //--------------------------------------------------------------
 void ofxMidiParams::setVisible(bool ab) {
-	bVisible = ab;
+	bShowGui = ab;
 }
 
 //--------------------------------------------------------------
 void ofxMidiParams::toggleVisible() {
-	bVisible = !bVisible;
+	bShowGui = !bShowGui;
 }
 
 //--------------------------------------------------------------
 void ofxMidiParams::draw() {
-	if (bVisible)
+	if (!bShowGui) return;
+
 	{
 		ofPushMatrix(); {
 			ofTranslate(pos.x, pos.y);
@@ -755,15 +767,16 @@ void ofxMidiParams::draw() {
 			//header
 			ofSetColor(30);
 			ofDrawRectangle(mHeaderRect);
+
 			//label
 			ofSetColor(225);
 			if (myFont.isLoaded())
 			{
-				myFont.drawString(hstring, mHeaderRect.x + 4, mHeaderRect.y + mHeaderRect.height / 2 + 6);
+				myFont.drawString(hstring, mHeaderRect.x + 6, mHeaderRect.y + mHeaderRect.height / 2 + 6);
 			}
 			else
 			{
-				ofDrawBitmapString(hstring, mHeaderRect.x + 4, mHeaderRect.y + mHeaderRect.height / 2 + 6);
+				ofDrawBitmapString(hstring, mHeaderRect.x + 6, mHeaderRect.y + mHeaderRect.height / 2 + 6);
 			}
 
 			//green circle
@@ -778,7 +791,7 @@ void ofxMidiParams::draw() {
 			ofDrawRectangle(mSaveBtnRect);
 
 			//show internal gui
-			if (ShowGui) ofSetColor(colorFill); else ofSetColor(80);
+			if (bShowGuiInternal) ofSetColor(colorFill); else ofSetColor(80);
 			ofDrawRectangle(mShowGuiInternalRect);
 
 			//show minimize
@@ -791,13 +804,13 @@ void ofxMidiParams::draw() {
 			if (myFont.isLoaded())
 			{
 				myFont.drawString("Save", mSaveBtnRect.x + 4, mSaveBtnRect.getCenter().y + 4);
-				myFont.drawString("Gui", mShowGuiInternalRect.x + 8, mShowGuiInternalRect.getCenter().y + 4);
+				myFont.drawString("Gui", mShowGuiInternalRect.x + 6, mShowGuiInternalRect.getCenter().y + 4);
 				myFont.drawString(s, mMinimizeRect.x + 6, mMinimizeRect.getCenter().y + 4);
 			}
 			else
 			{
 				ofDrawBitmapString("Save", mSaveBtnRect.x + 4, mSaveBtnRect.getCenter().y + 4);
-				ofDrawBitmapString("Gui", mShowGuiInternalRect.x + 8, mShowGuiInternalRect.getCenter().y + 4);
+				ofDrawBitmapString("Gui", mShowGuiInternalRect.x + 6, mShowGuiInternalRect.getCenter().y + 4);
 				ofDrawBitmapString(s, mMinimizeRect.x + 6, mMinimizeRect.getCenter().y + 4);
 			}
 
@@ -882,7 +895,7 @@ void ofxMidiParams::draw() {
 		} ofPopMatrix();
 	}
 
-	if (ShowGui)
+	if (bShowGuiInternal)
 	{
 		auto p = getPosition();
 		auto w = getWidth() + 5;
@@ -988,7 +1001,7 @@ void ofxMidiParams::mousePressed(int x, int y, int button) {
 	}
 
 	if (mShowGuiInternalRect.inside(mp)) {
-		ShowGui = !ShowGui;
+		bShowGuiInternal = !bShowGuiInternal;
 	}
 
 	if (mMinimizeRect.inside(mp)) {
