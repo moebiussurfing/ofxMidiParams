@@ -80,7 +80,7 @@ void ofxMidiParams::setup()
 	//--
 
 	// exclude
-	//bShowGui.setSerializable(false);
+	//bGui.setSerializable(false);
 	//midiOut_Port_name.setSerializable(false); // include to display purposes on xml file only...
 	bSave.setSerializable(false);
 	bPopulate.setSerializable(false);
@@ -96,7 +96,7 @@ void ofxMidiParams::setup()
 	params_AppState.add(posGui);
 	params_AppState.add(bShowGuiInternal);
 	params_AppState.add(bShowMapping);
-	params_AppState.add(bShowGui);
+	params_AppState.add(bGui);
 	params_AppState.add(bAutoSave);
 	params_AppState.add(bSave);
 	params_AppState.add(bPopulate);
@@ -801,17 +801,17 @@ void ofxMidiParams::_updatePositions() {
 
 //--------------------------------------------------------------
 bool ofxMidiParams::isVisible() {
-	return bShowGui;
+	return bGui;
 }
 
 //--------------------------------------------------------------
 void ofxMidiParams::setVisible(bool ab) {
-	bShowGui = ab;
+	bGui = ab;
 }
 
 //--------------------------------------------------------------
 void ofxMidiParams::toggleVisible() {
-	bShowGui = !bShowGui;
+	bGui = !bGui;
 }
 
 //--------------------------------------------------------------
@@ -820,16 +820,19 @@ void ofxMidiParams::draw() {
 
 	//--
 
-	if (!bShowGui) return;
+	if (!bGui) return;
 
 	if (bShowMapping)
 	{
-		ofPushMatrix(); {
+		ofPushMatrix(); 
+		{
 			//ofTranslate(posGui.get().x, posGui.get().y);
 			ofTranslate(pos.x, pos.y);
 
 			// device name
-			string hstring = mDesiredDeviceNameToOpen;
+			string hstring = midiIn_Port_name;
+			//string hstring = mDesiredDeviceNameToOpen;
+
 			if (hstring == "") {
 				hstring = "No MIDI Device.";
 			}

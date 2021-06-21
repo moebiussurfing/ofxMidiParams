@@ -102,7 +102,7 @@ private:
 	void doPopulate();
 
 public:
-	ofParameter<bool> bShowGui{ "SHOW MIDI PARAMS", true };
+	ofParameter<bool> bGui{ "MIDI PARAMS", true };
 
 public:
 	bool connect();
