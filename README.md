@@ -15,7 +15,9 @@ This is a modified FORK from [ofxMidiParams](https://github.com/NickHardeman/ofx
 * ofxMidi
 * ofxImGui
 
+---------------------------
+
 Bridge between ofxMidi and ofParameter. Simple interface to quickly perform midi learning for ofParameters. 
 Requires ofxMidi (https://github.com/danomatika/ofxMidi)
 
-![ofxMidiParams](readme.gif)
+![ofxMidiParams](docs/readme.gif)
