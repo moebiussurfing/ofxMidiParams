@@ -10,10 +10,10 @@
 	<param paramName="Pad8" group="Pad_Params" midiid="-1" displayName="" />
 	<param paramName="K1" group="group" midiid="24" displayName="Control24" />
 	<param paramName="K2" group="group" midiid="25" displayName="Control25" />
-	<param paramName="K3" group="group" midiid="26" displayName="Control26" />
-	<param paramName="K4" group="group" midiid="27" displayName="Control27" />
-	<param paramName="K5" group="group" midiid="28" displayName="Control28" />
-	<param paramName="K6" group="group" midiid="29" displayName="Control29" />
+	<param paramName="K3" group="group" midiid="-1" displayName="" />
+	<param paramName="K4" group="group" midiid="-1" displayName="" />
+	<param paramName="K5" group="group" midiid="-1" displayName="" />
+	<param paramName="K6" group="group" midiid="-1" displayName="" />
 	<param paramName="K7" group="group" midiid="-1" displayName="" />
 	<param paramName="K8" group="group" midiid="-1" displayName="" />
 </midiparams>

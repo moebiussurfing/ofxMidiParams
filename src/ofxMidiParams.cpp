@@ -9,6 +9,11 @@
 
 //--------------------------------------------------------------
 ofxMidiParams::ofxMidiParams() {
+	setPosition(ofGetWidth() - 320, 20); // default pos
+
+	filenameSettings = "Midi-Params.xml";
+	path_Global = "ofxMidiParams/";
+
 	enableMouseEvents();
 	_updatePositions();
 
@@ -31,10 +36,11 @@ ofxMidiParams::ofxMidiParams() {
 //--------------------------------------------------------------
 void ofxMidiParams::setup()
 {
-	path_Global = "ofxMidiParams/";
+	// TODO: allow change paths on setup..
+
 	path_Ports = path_Global + "Midi-Ports.xml";
 	path_AppState = path_Global + "AppState.xml";
-	path_ParamsList = path_Global + "Midi-Params.xml";
+	path_ParamsList = path_Global + filenameSettings;
 
 	ofxSurfingHelpers::CheckFolder(path_Global);
 
@@ -87,9 +93,7 @@ void ofxMidiParams::setup()
 	params_MidiPorts.add(midiOut_Port_name);
 
 	params_AppState.add(bAutoName);
-#ifdef USE_OFX_GUI__MIDI_PARAMS
 	params_AppState.add(posGui);
-#endif
 	params_AppState.add(bShowGuiInternal);
 	params_AppState.add(bShowMapping);
 	params_AppState.add(bShowGui);
@@ -183,7 +187,7 @@ void ofxMidiParams::Changed_Controls(ofAbstractParameter &e)
 		bPopulate = false;
 		doPopulate();
 	}
-	
+
 	else if (name == midiIn_Port.getName())
 	{
 		//midiIn.closePort();
@@ -201,12 +205,13 @@ void ofxMidiParams::Changed_Controls(ofAbstractParameter &e)
 		bLog = true;
 	}
 
-#ifdef USE_OFX_GUI__MIDI_PARAMS
+	//#ifdef USE_OFX_GUI__MIDI_PARAMS
 	else if (name == posGui.getName())
 	{
+		//pos = posGui.get();
 		setPosition(posGui.get().x, posGui.get().y);
 	}
-#endif
+	//#endif
 
 	if (bLog && (name == midiIn_Port.getName() || name == midiOut_Port.getName()))
 	{
@@ -820,6 +825,7 @@ void ofxMidiParams::draw() {
 	if (bShowMapping)
 	{
 		ofPushMatrix(); {
+			//ofTranslate(posGui.get().x, posGui.get().y);
 			ofTranslate(pos.x, pos.y);
 
 			// device name
@@ -1215,8 +1221,15 @@ void ofxMidiParams::drawImGui()
 				{
 					ImGui::Indent();
 
-					ofxImGuiSurfing::AddBigButton(bPopulate, _w100, _h / 2);
+					_w100 = getWidgetsWidth(1);
+					_w50 = getWidgetsWidth(2);
+
+					//ofxImGuiSurfing::AddBigButton(bPopulate, _w100, _h / 2);
 					ofxImGuiSurfing::AddToggleRoundedButton(bAutoSave);
+
+					ImGui::Text(path_Global.c_str());
+					ImGui::Text(filenameSettings.c_str());
+					ImGui::Dummy(ImVec2(0, 5)); // spacing
 
 					//--
 

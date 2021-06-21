@@ -6,7 +6,8 @@
 #include "ofxGui.h"
 #include "ofxSurfing_ofxGui.h" // -> to custom theme only
 
-class ofApp : public ofBaseApp{
+class ofApp : public ofBaseApp {
+
 public:
     void setup();
     void update();
@@ -33,5 +34,5 @@ public:
 		
 	ofxPanel gui;
 
-	int lastTrig;
+	int lastKey;
 };

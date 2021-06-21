@@ -22,21 +22,24 @@ void ofApp::setup() {
 	kParams.add(k7.set("K7", 0.5, 0.0, 1.0));
 	kParams.add(k8.set("K8", 0.5, 0.0, 1.0));
 
-	mMidiParams.connect(1, true);
-	mMidiParams.add(padParams);
+	//-
+
+	mMidiParams.connect();
+	mMidiParams.add(padParams); // -> add groups
 	mMidiParams.add(kParams);
 
-	// you could also add individually //
-	//mMidiParams.add( k1 );
-	//mMidiParams.add( k2 );
-	//mMidiParams.add( k3 );
-	mMidiParams.setPosition(ofGetWidth() - 320, 20);
+	//mMidiParams.setFilenameSettings("settings2.xml"); // -> you can customize name if required
+
+	//// you could also add individually
+	////mMidiParams.add( k1 );
+	////mMidiParams.add( k2 );
+	////mMidiParams.add( k3 );
+
+	//TODO: nested groups seems to fail..
 
 	// to connect incoming MIDI to ofParameters passed into mMidiParams,
 	// click on the parameter listed in the mMidiParams gui and
 	// the next MIDI message will be used for mapping to that parameter.
-
-	mMidiParams.load("example-midi-params.xml");
 
 	//--
 
@@ -50,7 +53,7 @@ void ofApp::setup() {
 //--------------------------------------------------------------
 void ofApp::update() {
 	// buttons off
-	if (ofGetElapsedTimeMillis() - lastTrig > 30) {
+	if (ofGetElapsedTimeMillis() - lastKey > 30) {
 		if (pad5) pad5 = false;
 		if (pad6) pad6 = false;
 		if (pad7) pad7 = false;
@@ -144,10 +147,10 @@ void ofApp::keyPressed(int key) {
 	if (key == '3') pad3 = !pad3;
 	if (key == '4') pad4 = !pad4;
 	//buttons
-	if (key == '5') { pad5 = true; lastTrig = ofGetElapsedTimeMillis(); }
-	if (key == '6') { pad6 = true; lastTrig = ofGetElapsedTimeMillis(); }
-	if (key == '7') { pad7 = true; lastTrig = ofGetElapsedTimeMillis(); }
-	if (key == '8') { pad8 = true; lastTrig = ofGetElapsedTimeMillis(); }
+	if (key == '5') { pad5 = true; lastKey = ofGetElapsedTimeMillis(); }
+	if (key == '6') { pad6 = true; lastKey = ofGetElapsedTimeMillis(); }
+	if (key == '7') { pad7 = true; lastKey = ofGetElapsedTimeMillis(); }
+	if (key == '8') { pad8 = true; lastKey = ofGetElapsedTimeMillis(); }
 }
 
 //--------------------------------------------------------------

@@ -82,23 +82,23 @@ private:
 #endif
 
 	void Changed_Controls(ofAbstractParameter &e);
-	
+
 	ofParameterGroup params_MidiPorts{ "MIDI PORTS" };
 	ofParameterGroup params_AppState{ "AppState" };
 
 	ofParameter<int> midiIn_Port{ "Midi In", 0, 0, 10 };
 	ofParameter<int> midiOut_Port{ "Midi Out", 2, 0, 10 };
-	ofParameter<std::string> midiIn_Port_name{ "In" , ""};
+	ofParameter<std::string> midiIn_Port_name{ "In" , "" };
 	ofParameter<std::string> midiOut_Port_name{ "Out", "" };
 	ofParameter<glm::vec2> posGui{ "Position GUI", glm::vec2(10,10), glm::vec2(0,0), glm::vec2(1920,1080) };
 	ofParameter<bool> bShowGuiInternal{ "Show Internal", true };
 	ofParameter<bool> bShowMapping{ "MAPPING", true };
 	ofParameter<bool>  bAutoName{ "Auto Name Learn", true };
 	ofParameter<bool>  bAutoSave{ "Auto Save", false };
-	ofParameter<bool> bMinimize{ "Minimize", false};
+	ofParameter<bool> bMinimize{ "Minimize", false };
 	ofParameter<bool>  bSave{ "SAVE", false };
 	ofParameter<bool>  bPopulate{ "POPULATE", false };
-	
+
 	void doPopulate();
 
 public:
@@ -148,8 +148,12 @@ public:
 	void toggleVisible();
 
 	//added api
-	void setPosition(float ax, float ay) { pos = glm::vec2(ax, ay); }
+	void setPosition(float ax, float ay) {
+		pos = glm::vec2(ax, ay);
+		posGui = pos;
+	}
 	glm::vec2 getPosition() {
+		//return posGui.get();
 		return pos;
 	};
 	float getWidth()
@@ -212,11 +216,19 @@ protected:
 	ofColor colorFill3;
 	ofColor colorBack;
 
+	ofTrueTypeFont myFont;
+	int fontSize;
 
+	string filenameSettings;
+
+public:
+	void setFilenameSettings(string s)
+	{
+		filenameSettings = s;
+		path_ParamsList = path_Global + filenameSettings;
+	}
 	void setPathGlobal(string s)
 	{
 		path_Global = s;
 	}
-	ofTrueTypeFont myFont;
-	int fontSize;
 };
