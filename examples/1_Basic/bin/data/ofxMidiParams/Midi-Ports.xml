@@ -1,0 +1,10 @@
+{
+    "Midi": {
+        "Auto_Name_Learn": "1",
+        "Midi_In": "1",
+        "Midi_Out": "2",
+        "Minimize": "0",
+        "Position_GUI": "375, 50",
+        "Show_Internal": "1"
+    }
+}

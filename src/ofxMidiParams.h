@@ -3,15 +3,34 @@
 //  MidiParameter
 //
 //  Created by Nick Hardeman on 12/28/18.
+//	modified version by moebiusSurfing
 //
 
 #pragma once
+
 #include "ofMain.h"
 
-#include "ofxMidi.h"
+//--
+
+// pick a gui
+
+//#define USE_OFX_GUI__MIDI_PARAMS
+#define USE_OFX_IM_GUI__MIDI_PARAMS
+
+//--
+
+
+#ifdef USE_OFX_GUI__MIDI_PARAMS
 #include "ofxGui.h"
-#include "ofxSurfingHelpers.h"
 #include "ofxSurfing_ofxGui.h"
+#endif
+
+#ifdef USE_OFX_IM_GUI__MIDI_PARAMS
+#include "ofxSurfingImGui.h"	// -> Add all classes. You can also simplify picking what you want to use.
+#endif
+
+#include "ofxMidi.h"
+#include "ofxSurfingHelpers.h"
 
 class ofxMidiParams : public ofxMidiListener {
 
@@ -52,11 +71,19 @@ public:
 	~ofxMidiParams();
 
 private:
-	ofxPanel gui;
 
-	void Changed_Controls_MidiPorts(ofAbstractParameter &e);
+#ifdef USE_OFX_GUI__MIDI_PARAMS
+	ofxPanel gui;
+#endif
+
+#ifdef USE_OFX_IM_GUI__MIDI_PARAMS
+	void drawImGui();
+	ofxSurfing_ImGui_Manager guiManager; // In MODE A ofxGui will be instatiated inside the class
+#endif
+
+	void Changed_Controls(ofAbstractParameter &e);
 	
-	ofParameterGroup params_MidiPorts{ "Midi" };
+	ofParameterGroup params_MidiPorts{ "MIDI PORTS" };
 	ofParameterGroup params_AppState{ "AppState" };
 
 	ofParameter<int> midiIn_Port{ "Midi In", 0, 0, 10 };
@@ -65,8 +92,14 @@ private:
 	ofParameter<std::string> midiOut_Port_name{ "Out", "" };
 	ofParameter<glm::vec2> posGui{ "Position GUI", glm::vec2(10,10), glm::vec2(0,0), glm::vec2(1920,1080) };
 	ofParameter<bool> bShowGuiInternal{ "Show Internal", true };
+	ofParameter<bool> bShowMapping{ "MAPPING", true };
 	ofParameter<bool>  bAutoName{ "Auto Name Learn", true };
+	ofParameter<bool>  bAutoSave{ "Auto Save", false };
 	ofParameter<bool> bMinimize{ "Minimize", false};
+	ofParameter<bool>  bSave{ "SAVE", false };
+	ofParameter<bool>  bPopulate{ "POPULATE", false };
+	
+	void doPopulate();
 
 public:
 	ofParameter<bool> bShowGui{ "SHOW MIDI PARAMS", true };
@@ -175,6 +208,8 @@ protected:
 	//-
 
 	ofColor colorFill;
+	ofColor colorFill2;
+	ofColor colorFill3;
 	ofColor colorBack;
 
 

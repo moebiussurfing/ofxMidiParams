@@ -11,10 +11,15 @@
 ofxMidiParams::ofxMidiParams() {
 	enableMouseEvents();
 	_updatePositions();
+
+#ifdef USE_OFX_GUI__MIDI_PARAMS
 	ofxSurfingHelpers::setThemeDark_ofxGui();
+#endif
 
 	//custom colors
 	colorFill = ofColor(0, 225);
+	colorFill2 = ofColor(60, 225);
+	colorFill3 = ofColor(80, 225);
 	colorBack = ofColor(16, 200);
 
 	//TODO:
@@ -31,6 +36,8 @@ void ofxMidiParams::setup()
 	path_AppState = path_Global + "AppState.xml";
 	path_ParamsList = path_Global + "Midi-Params.xml";
 
+	ofxSurfingHelpers::CheckFolder(path_Global);
+
 	//-
 
 	midiIn.listInPorts();
@@ -45,16 +52,16 @@ void ofxMidiParams::setup()
 	std::string path;
 	path = "assets/fonts/";
 
-	//fontSize = 9;
-	//path += "overpass-mono-bold.otf";
-	
 	fontSize = 8;
-	path += "telegrama_render.otf";
+	path += "overpass-mono-bold.otf";
+
+	//fontSize = 8;
+	//path += "telegrama_render.otf";
 
 	//path = ofToString(path);
 	//path = ofToString(path_GLOBAL + "/" + "fonts/" + "overpass-mono-bold.otf");
 
-	myFont.loadFont(path, fontSize);
+	myFont.loadFont(path, fontSize, true, true, true);
 	if (myFont.isLoaded())
 	{
 		ofLogNotice(__FUNCTION__) << "Loaded font '" << path << "'";
@@ -66,9 +73,13 @@ void ofxMidiParams::setup()
 
 	//--
 
-	bShowGui.setSerializable(false);
-	//midiOut_Port_name.setSerializable(false);//to display on xml file only...
-	//midiIn_Port_name.setSerializable(false);
+	// exclude
+	//bShowGui.setSerializable(false);
+	//midiOut_Port_name.setSerializable(false); // include to display purposes on xml file only...
+	bSave.setSerializable(false);
+	bPopulate.setSerializable(false);
+
+	//-
 
 	params_MidiPorts.add(midiIn_Port);
 	params_MidiPorts.add(midiIn_Port_name);
@@ -76,16 +87,31 @@ void ofxMidiParams::setup()
 	params_MidiPorts.add(midiOut_Port_name);
 
 	params_AppState.add(bAutoName);
+#ifdef USE_OFX_GUI__MIDI_PARAMS
 	params_AppState.add(posGui);
+#endif
 	params_AppState.add(bShowGuiInternal);
+	params_AppState.add(bShowMapping);
 	params_AppState.add(bShowGui);
+	params_AppState.add(bAutoSave);
+	params_AppState.add(bSave);
+	params_AppState.add(bPopulate);
 	params_AppState.add(bMinimize);
 
-	ofAddListener(params_MidiPorts.parameterChangedE(), this, &ofxMidiParams::Changed_Controls_MidiPorts);
-	ofAddListener(params_AppState.parameterChangedE(), this, &ofxMidiParams::Changed_Controls_MidiPorts);
+	ofAddListener(params_MidiPorts.parameterChangedE(), this, &ofxMidiParams::Changed_Controls);
+	ofAddListener(params_AppState.parameterChangedE(), this, &ofxMidiParams::Changed_Controls);
 
+	//--
+
+#ifdef USE_OFX_GUI__MIDI_PARAMS
 	gui.setup("ofxMidiParams");
 	gui.add(params_MidiPorts);
+#endif
+
+#ifdef USE_OFX_IM_GUI__MIDI_PARAMS
+	guiManager.setImGuiAutodraw(true);
+	guiManager.setup(); // ofxImGui is instantiated inside the class, the we can forgot of declare ofxImGui here (ofApp scope).
+#endif
 
 	//--
 
@@ -111,6 +137,15 @@ void ofxMidiParams::setup()
 }
 
 //--------------------------------------------------------------
+void ofxMidiParams::doPopulate()
+{
+	ofLogNotice(__FUNCTION__);
+
+	//TODO:
+	//fast assign midi controls...
+}
+
+//--------------------------------------------------------------
 void ofxMidiParams::startup()
 {
 	ofLogNotice(__FUNCTION__);
@@ -126,17 +161,30 @@ void ofxMidiParams::startup()
 }
 
 //--------------------------------------------------------------
-void ofxMidiParams::Changed_Controls_MidiPorts(ofAbstractParameter &e)
+void ofxMidiParams::Changed_Controls(ofAbstractParameter &e)
 {
 	std::string name = e.getName();
 
-	ofLogNotice(__FUNCTION__) << name << " : " << e;
+	ofLogVerbose(__FUNCTION__) << name << " : " << e;
 
 	//----
 
 	bool bLog = false;
 
-	if (name == midiIn_Port.getName())
+	if (0) {}
+
+	else if (name == bSave.getName() && bSave)
+	{
+		bSave = false;
+		save(path_ParamsList);
+	}
+	else if (name == bPopulate.getName() && bPopulate)
+	{
+		bPopulate = false;
+		doPopulate();
+	}
+	
+	else if (name == midiIn_Port.getName())
 	{
 		//midiIn.closePort();
 		disconnect();
@@ -144,6 +192,7 @@ void ofxMidiParams::Changed_Controls_MidiPorts(ofAbstractParameter &e)
 		midiIn_Port_name = midiIn.getName();
 		bLog = true;
 	}
+
 	else if (name == midiOut_Port.getName())
 	{
 		midiOut.closePort();
@@ -151,12 +200,15 @@ void ofxMidiParams::Changed_Controls_MidiPorts(ofAbstractParameter &e)
 		midiOut_Port_name = midiOut.getName();
 		bLog = true;
 	}
+
+#ifdef USE_OFX_GUI__MIDI_PARAMS
 	else if (name == posGui.getName())
 	{
 		setPosition(posGui.get().x, posGui.get().y);
 	}
+#endif
 
-	if (bLog)
+	if (bLog && (name == midiIn_Port.getName() || name == midiOut_Port.getName()))
 	{
 		ofLogNotice(__FUNCTION__) << "-----------------------------------------------";
 		ofLogNotice(__FUNCTION__) << "MidiOut";
@@ -170,7 +222,6 @@ void ofxMidiParams::Changed_Controls_MidiPorts(ofAbstractParameter &e)
 		ofLogNotice(__FUNCTION__) << midiIn.getName();
 		ofLogNotice(__FUNCTION__) << (midiIn.isVirtual() ? "is Virtual" : "Not Virtual") << endl;
 	}
-
 }
 
 //--------------------------------------------------------------
@@ -178,7 +229,7 @@ void ofxMidiParams::Changed_Controls_Out(ofAbstractParameter &e)
 {
 	std::string name = e.getName();
 
-	ofLogNotice(__FUNCTION__) << name << " : " << e;
+	ofLogVerbose(__FUNCTION__) << name << " : " << e;
 
 	//----
 
@@ -236,7 +287,7 @@ ofxMidiParams::~ofxMidiParams() {
 	bHasUpdateEvent = false;
 
 	ofRemoveListener(mParamsGroup.parameterChangedE(), this, &ofxMidiParams::Changed_Controls_Out);
-	ofRemoveListener(params_MidiPorts.parameterChangedE(), this, &ofxMidiParams::Changed_Controls_MidiPorts);
+	ofRemoveListener(params_MidiPorts.parameterChangedE(), this, &ofxMidiParams::Changed_Controls);
 
 	// clean up
 	midiOut.closePort();
@@ -244,7 +295,7 @@ ofxMidiParams::~ofxMidiParams() {
 	posGui = getPosition();
 	ofxSurfingHelpers::saveGroup(params_MidiPorts, path_Ports);
 	ofxSurfingHelpers::saveGroup(params_AppState, path_AppState);
-}	
+}
 
 
 //--------------------------------------------------------------
@@ -327,6 +378,8 @@ bool ofxMidiParams::save(string aXmlFilepath) {
 	//ofLogWarning() << __FUNCTION__ << " ";
 
 	if (aXmlFilepath != "") {
+		ofLogNotice(__FUNCTION__) << aXmlFilepath;
+
 		mXmlFilePath = aXmlFilepath;
 	}
 
@@ -499,6 +552,11 @@ void ofxMidiParams::newMidiMessage(ofxMidiMessage& amsg) {
 		mSelectedParam->bNeedsTextPrompt = true;
 		mSelectedParam->bListening = false;
 		//mSelectedParam.reset();
+
+		////TODO:
+		//if (bAutoSave) {
+		//	save(path_ParamsList);
+		//}
 	}
 
 	int tid = getId(amsg);
@@ -708,7 +766,7 @@ void ofxMidiParams::addParam(ofAbstractParameter& aparam) {
 
 	//-
 
-	startup();
+	//startup();
 }
 
 //--------------------------------------------------------------
@@ -722,9 +780,11 @@ void ofxMidiParams::_updatePositions() {
 
 	mSaveBtnRect.set(xx, 4, wb, hb);
 	mShowGuiInternalRect.set(xx - 1 * (5 + wb), 4, wb, hb);
-	mMinimizeRect.set(xx - 2 * (5 + wb) + wb/2, 4, wb/2, hb);
+	mMinimizeRect.set(xx - 2 * (5 + wb) + wb / 2, 4, wb / 2, hb);
 
-	mMessageRect.set(0, mHeaderRect.getBottom() + 2, width, 16 * 6);
+	mMessageRect.set(0, mHeaderRect.getBottom() + 2, width, 18 * 6);
+	//mMessageRect.set(0, mHeaderRect.getBottom() + 2, width, 16 * 6);
+
 	for (int i = 0; i < mAssocParams.size(); i++) {
 		mAssocParams[i]->drawRect.height = 20.f;
 		float ty = mMessageRect.getBottom() + 2.f + (float)i*(mAssocParams[i]->drawRect.height + 2.f);
@@ -751,24 +811,29 @@ void ofxMidiParams::toggleVisible() {
 
 //--------------------------------------------------------------
 void ofxMidiParams::draw() {
+	if (ofGetFrameNum() == 0) startup(); // -> load settings
+
+	//--
+
 	if (!bShowGui) return;
 
+	if (bShowMapping)
 	{
 		ofPushMatrix(); {
 			ofTranslate(pos.x, pos.y);
 
-			//device name
+			// device name
 			string hstring = mDesiredDeviceNameToOpen;
 			if (hstring == "") {
 				hstring = "No MIDI Device.";
 			}
 			hstring = "MIDI IN: " + hstring;
 
-			//header
+			// header
 			ofSetColor(30);
 			ofDrawRectangle(mHeaderRect);
 
-			//label
+			// label
 			ofSetColor(225);
 			if (myFont.isLoaded())
 			{
@@ -779,44 +844,63 @@ void ofxMidiParams::draw() {
 				ofDrawBitmapString(hstring, mHeaderRect.x + 6, mHeaderRect.y + mHeaderRect.height / 2 + 6);
 			}
 
-			//green circle
+			// green circle
 			ofSetColor(200, 20, 70);
-			if (isConnected()) {
+			if (isConnected())
+			{
 				ofSetColor(20, 210, 60);
 			}
 			ofDrawCircle(mHeaderRect.width - (mHeaderRect.height / 2), mHeaderRect.height / 2, mHeaderRect.height / 4);
 
-			//save button
-			ofSetColor(80);
+			// save button
+			ofSetColor(colorFill3);
 			ofDrawRectangle(mSaveBtnRect);
 
-			//show internal gui
-			if (bShowGuiInternal) ofSetColor(colorFill); else ofSetColor(80);
+			// show internal gui
+			if (bShowGuiInternal) ofSetColor(colorFill2); else ofSetColor(colorFill3);
 			ofDrawRectangle(mShowGuiInternalRect);
 
-			//show minimize
-			if (bMinimize) ofSetColor(colorFill); else ofSetColor(80);
+			// show minimize
+			if (bMinimize) ofSetColor(colorFill2); else ofSetColor(colorFill3);
 			ofDrawRectangle(mMinimizeRect);
 
-			//labels
+			// labels
 			ofSetColor(200);
 			std::string s = bMinimize ? "+" : "-";
+
 			if (myFont.isLoaded())
 			{
-				myFont.drawString("Save", mSaveBtnRect.x + 4, mSaveBtnRect.getCenter().y + 4);
-				myFont.drawString("Gui", mShowGuiInternalRect.x + 6, mShowGuiInternalRect.getCenter().y + 4);
-				myFont.drawString(s, mMinimizeRect.x + 6, mMinimizeRect.getCenter().y + 4);
+				float y;
+				float w;
+				float h;
+				ofRectangle r;
+
+				r = myFont.getStringBoundingBox("SAVE", 0, 0);
+				w = r.getWidth();
+				h = r.getHeight();
+				y = mSaveBtnRect.getCenter().y + h / 2;
+				myFont.drawString("SAVE", mSaveBtnRect.getCenter().x - w / 2, y);
+
+				r = myFont.getStringBoundingBox("GUI", 0, 0);
+				w = r.getWidth();
+				h = r.getHeight();
+				myFont.drawString("GUI", mShowGuiInternalRect.getCenter().x - w / 2, y);
+
+				r = myFont.getStringBoundingBox("+", 0, 0);
+				w = r.getWidth();
+				h = r.getHeight();
+				myFont.drawString(s, mMinimizeRect.getCenter().x - w / 2, y);
 			}
 			else
 			{
-				ofDrawBitmapString("Save", mSaveBtnRect.x + 4, mSaveBtnRect.getCenter().y + 4);
-				ofDrawBitmapString("Gui", mShowGuiInternalRect.x + 6, mShowGuiInternalRect.getCenter().y + 4);
+				ofDrawBitmapString("SAVE", mSaveBtnRect.x + 4, mSaveBtnRect.getCenter().y + 4);
+				ofDrawBitmapString("GUI", mShowGuiInternalRect.x + 6, mShowGuiInternalRect.getCenter().y + 4);
 				ofDrawBitmapString(s, mMinimizeRect.x + 6, mMinimizeRect.getCenter().y + 4);
 			}
 
 			if (!bMinimize)
 			{
-				//bg log
+				// bg log
 				ofSetColor(10);
 				ofDrawRectangle(mMessageRect);
 				string messStr = mMidiMessageHistoryStr;
@@ -824,7 +908,7 @@ void ofxMidiParams::draw() {
 					messStr = "No MIDI messages received.";
 
 				}
-				//text log
+				// text log
 				ofSetColor(200);
 				if (myFont.isLoaded())
 				{
@@ -835,9 +919,10 @@ void ofxMidiParams::draw() {
 					ofDrawBitmapString(messStr, mMessageRect.x + 8, mMessageRect.y + 18);
 				}
 
-				//assigned params
-				for (int i = 0; i < mAssocParams.size(); i++) {
-					//value fill
+				// assigned params
+				for (int i = 0; i < mAssocParams.size(); i++)
+				{
+					// value fill
 					ofSetColor(colorBack);
 					auto& ma = mAssocParams[i];
 					float val = getParamValuePct(ma);
@@ -852,7 +937,7 @@ void ofxMidiParams::draw() {
 						ofDrawRectangle(ma->drawRect);
 					}
 
-					//left param label
+					// left param label
 					ofSetColor(255);
 					float texty = ma->drawRect.y + 14;
 					if (myFont.isLoaded())
@@ -864,7 +949,7 @@ void ofxMidiParams::draw() {
 						ofDrawBitmapString(mParamsGroup.getName(i), 0.0 + 8, texty);
 					}
 
-					//right midi item value
+					// right midi item value
 					if (ma->displayMidiName != "") {
 						float sw = ma->displayMidiName.length() * 8.f;
 						if (myFont.isLoaded())
@@ -876,7 +961,7 @@ void ofxMidiParams::draw() {
 							ofDrawBitmapString(ma->displayMidiName, ma->drawRect.getRight() - sw - 4, texty);
 						}
 					}
-					//midi learn
+					// midi learn
 					else if (ma->bListening) {
 						string tstr = "Listening";
 						float sw = tstr.length() * 8.f;
@@ -897,10 +982,17 @@ void ofxMidiParams::draw() {
 
 	if (bShowGuiInternal)
 	{
+
+#ifdef USE_OFX_IM_GUI__MIDI_PARAMS
+		drawImGui();
+#endif
+
+#ifdef USE_OFX_GUI__MIDI_PARAMS
 		auto p = getPosition();
 		auto w = getWidth() + 5;
 		gui.setPosition(p.x + w, p.y);
 		gui.draw();
+#endif
 	}
 }
 
@@ -1039,6 +1131,107 @@ void ofxMidiParams::mouseReleased(int x, int y, int button) {
 }
 
 
+#ifdef USE_OFX_IM_GUI__MIDI_PARAMS
+//--------------------------------------------------------------
+void ofxMidiParams::drawImGui()
+{
+	guiManager.begin(); // global begin
+	{
+		{
+			string n = "MIDI PARAMS";
+			static bool bOpen0 = true;
+			ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
+			if (guiManager.bAutoResize) window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
+			guiManager.beginWindow(n.c_str(), &bOpen0, window_flags);
+			{
+				//ImGui::Dummy(ImVec2(0, 5)); // spacing
 
+				float _h = WIDGETS_HEIGHT;
+				float _w100 = getWidgetsWidth(1);
+				float _w50 = getWidgetsWidth(2);
+
+				ofxImGuiSurfing::AddBigToggle(bShowMapping, _w100, _h / 2, false);
+				ofxImGuiSurfing::AddBigButton(bSave, _w100, _h / 2);
+
+				//-
+
+				{
+					bool bOpen = false;
+					ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
+					_flagt |= ImGuiTreeNodeFlags_Framed;
+					if (ImGui::TreeNodeEx("CONNECT", _flagt))
+					{
+						_w100 = getWidgetsWidth(1);
+						_w50 = getWidgetsWidth(2);
+
+						string ni = "IN  " + midiIn_Port_name.get();
+						ImGui::Text(ni.c_str());
+						if (ImGui::Button("ON", ImVec2(_w50, _h / 2)))
+						{
+							midiIn.openPort(midiIn_Port);
+							midiIn_Port_name = midiIn.getName();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("OFF", ImVec2(_w50, _h / 2)))
+						{
+							disconnect();
+							midiIn_Port_name = "";
+						}
+
+						//-
+
+						string no = "OUT " + midiOut_Port_name.get();
+						ImGui::Text(no.c_str());
+						if (ImGui::Button("ON ", ImVec2(_w50, _h / 2)))
+						{
+							midiOut.openPort(midiOut_Port);
+							midiOut_Port_name = midiOut.getName();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("OFF ", ImVec2(_w50, _h / 2)))
+						{
+							midiOut.closePort();
+							midiOut_Port_name = "";
+						}
+						ImGui::TreePop();
+					}
+				}
+
+				//-
+
+				{
+					bool bOpen = false;
+					ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
+					_flagt |= ImGuiTreeNodeFlags_Framed;
+					ofxImGuiSurfing::AddGroup(params_MidiPorts, _flagt);
+				}
+
+				//-
+
+				ImGui::Dummy(ImVec2(0, 5)); // spacing
+
+				ofxImGuiSurfing::AddToggleRoundedButton(guiManager.bExtra);
+				if (guiManager.bExtra)
+				{
+					ImGui::Indent();
+
+					ofxImGuiSurfing::AddBigButton(bPopulate, _w100, _h / 2);
+					ofxImGuiSurfing::AddToggleRoundedButton(bAutoSave);
+
+					//--
+
+					ofxImGuiSurfing::AddToggleRoundedButton(guiManager.bAdvanced);
+					if (guiManager.bExtra) guiManager.drawAdvancedSubPanel();
+
+					ImGui::Unindent();
+				}
+			}
+			guiManager.endWindow();
+		}
+
+	}
+	guiManager.end(); // global end
+}
+#endif
 
 
