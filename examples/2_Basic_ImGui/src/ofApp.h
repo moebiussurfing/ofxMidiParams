@@ -35,4 +35,5 @@ public:
 	ofxPanel gui;
 
 	int lastKey;
+	bool bWait = false;
 };

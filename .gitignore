@@ -554,3 +554,6 @@ MigrationBackup/
 .ionide/
 ofxMidiParamsExample/bin/data/ofxMidiParams/Midi-Params.xml
 ofxMidiParamsExample/bin/data/ofxMidiParams/Midi-Ports.xml
+examples/2_Basic_ImGui/bin/data/ofxMidiParams/Midi-Ports.xml
+examples/2_Basic_ImGui/bin/data/ofxMidiParams/Midi-Params.xml
+examples/2_Basic_ImGui/bin/data/ofxMidiParams/AppState.xml

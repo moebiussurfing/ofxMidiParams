@@ -1,8 +1,8 @@
 {
-    "MIDI_PORTS": {
+    "PORTS": {
         "In": "MPD218 1",
         "Midi_In": "1",
         "Midi_Out": "2",
-        "Out": ""
+        "Out": "MPD218 2"
     }
 }

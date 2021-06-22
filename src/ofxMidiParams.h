@@ -83,7 +83,7 @@ private:
 
 	void Changed_Controls(ofAbstractParameter &e);
 
-	ofParameterGroup params_MidiPorts{ "MIDI PORTS" };
+	ofParameterGroup params_MidiPorts{ "PORTS" };
 	ofParameterGroup params_AppState{ "AppState" };
 
 	ofParameter<int> midiIn_Port{ "Midi In", 0, 0, 10 };
@@ -95,8 +95,10 @@ private:
 	ofParameter<bool> bShowMapping{ "MAPPING", true };
 	ofParameter<bool>  bAutoName{ "Auto Name Learn", true };
 	ofParameter<bool>  bAutoSave{ "Auto Save", false };
+	ofParameter<bool>  bAutoReconnect{ "Auto Reconnect", false };
 	ofParameter<bool> bMinimize{ "Minimize", false };
 	ofParameter<bool>  bSave{ "SAVE", false };
+	ofParameter<bool>  bLoad{ "LOAD", false };
 	ofParameter<bool>  bPopulate{ "POPULATE", false };
 
 	void doPopulate();
@@ -110,6 +112,9 @@ public:
 	bool connect(string aDeviceName, bool abRetryConnection);
 	void disconnect();
 	bool isConnected();
+	void refresh();
+
+	void clear(); // remove the parameters
 
 private:
 	bool save(string aXmlFilepath = "");

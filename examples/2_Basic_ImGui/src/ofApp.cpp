@@ -53,7 +53,9 @@ void ofApp::setup() {
 //--------------------------------------------------------------
 void ofApp::update() {
 	// buttons off
-	if (ofGetElapsedTimeMillis() - lastKey > 30) {
+	if (ofGetElapsedTimeMillis() - lastKey > 30 && bWait) {
+		bWait = false;
+
 		if (pad5) pad5 = false;
 		if (pad6) pad6 = false;
 		if (pad7) pad7 = false;
@@ -147,10 +149,10 @@ void ofApp::keyPressed(int key) {
 	if (key == '3') pad3 = !pad3;
 	if (key == '4') pad4 = !pad4;
 	//buttons
-	if (key == '5') { pad5 = true; lastKey = ofGetElapsedTimeMillis(); }
-	if (key == '6') { pad6 = true; lastKey = ofGetElapsedTimeMillis(); }
-	if (key == '7') { pad7 = true; lastKey = ofGetElapsedTimeMillis(); }
-	if (key == '8') { pad8 = true; lastKey = ofGetElapsedTimeMillis(); }
+	if (key == '5') { pad5 = true; lastKey = ofGetElapsedTimeMillis(); bWait = true; }
+	if (key == '6') { pad6 = true; lastKey = ofGetElapsedTimeMillis(); bWait = true; }
+	if (key == '7') { pad7 = true; lastKey = ofGetElapsedTimeMillis(); bWait = true; }
+	if (key == '8') { pad8 = true; lastKey = ofGetElapsedTimeMillis(); bWait = true; }
 }
 
 //--------------------------------------------------------------

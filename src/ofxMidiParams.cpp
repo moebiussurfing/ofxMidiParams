@@ -98,7 +98,9 @@ void ofxMidiParams::setup()
 	params_AppState.add(bShowMapping);
 	params_AppState.add(bGui);
 	params_AppState.add(bAutoSave);
+	params_AppState.add(bAutoReconnect);
 	params_AppState.add(bSave);
+	params_AppState.add(bLoad);
 	params_AppState.add(bPopulate);
 	params_AppState.add(bMinimize);
 
@@ -138,6 +140,18 @@ void ofxMidiParams::setup()
 	//-
 
 	//startup();
+}
+
+//--------------------------------------------------------------
+void ofxMidiParams::clear()
+{
+	ofLogNotice(__FUNCTION__);
+
+	mParamsGroup.clear();
+	mAssocParams.clear();
+
+	//mParamsGroup.setName("ofxMidiParams");
+	//ofAddListener(mParamsGroup.parameterChangedE(), this, &ofxMidiParams::Changed_Controls_Out);
 }
 
 //--------------------------------------------------------------
@@ -182,6 +196,12 @@ void ofxMidiParams::Changed_Controls(ofAbstractParameter &e)
 		bSave = false;
 		save(path_ParamsList);
 	}
+
+	else if (name == bLoad.getName() && bLoad)
+	{
+		bLoad = false;
+		load(path_ParamsList);
+	}
 	else if (name == bPopulate.getName() && bPopulate)
 	{
 		bPopulate = false;
@@ -190,11 +210,16 @@ void ofxMidiParams::Changed_Controls(ofAbstractParameter &e)
 
 	else if (name == midiIn_Port.getName())
 	{
+		vector<string> tportNames = midiIn.getInPortList();
+		mDesiredDeviceNameToOpen = tportNames[midiIn_Port];
+
 		//midiIn.closePort();
 		disconnect();
 		midiIn.openPort(midiIn_Port);
 		midiIn_Port_name = midiIn.getName();
 		bLog = true;
+
+		refresh();
 	}
 
 	else if (name == midiOut_Port.getName())
@@ -282,7 +307,7 @@ void ofxMidiParams::Changed_Controls_Out(ofAbstractParameter &e)
 
 //--------------------------------------------------------------
 ofxMidiParams::~ofxMidiParams() {
-	save(path_ParamsList);
+	if (bAutoSave) save(path_ParamsList);
 
 	disableMouseEvents();
 	disconnect();
@@ -345,6 +370,11 @@ bool ofxMidiParams::connect(int aport, bool abRetryConnection) {
 	// don't ignore sysex, timing, & active sense messages,
 	// these are ignored by default
 	midiIn.ignoreTypes(false, false, false);
+
+	if (bConnected)
+	{
+		midiIn_Port_name = midiIn.getName();
+	}
 
 	// add ofApp as a listener
 	if (bConnected) midiIn.addListener(this);
@@ -442,38 +472,13 @@ bool ofxMidiParams::load(string aXmlFilepath) {
 #pragma mark - Update
 //--------------------------------------------------------------
 void ofxMidiParams::update(ofEventArgs& args) {
-	uint64_t emillis = ofGetElapsedTimeMillis();
-	if (emillis >= mNextCheckMillis) {
-		//ofLogWarning() << __FUNCTION__ << " ";
 
-		vector<string> tportNames = midiIn.getInPortList();
-		bool bopen = midiIn.isOpen();
-		if (tportNames.size() == 0) {
-			if (bopen) {
-				disconnect();
-			}
-		}
-
-		bopen = midiIn.isOpen();
-		if (bopen && mDesiredDeviceNameToOpen != "") {
-			int tport = _getDesiredPortToOpen();
-			if (tport < 0) disconnect();
-		}
-
-
-		//cout << "bopen: " << bopen << " port: " << midiIn.getPort() << " | " << ofGetFrameNum() << endl;
-
-		if (!bConnected && bTryReconnect) {
-			if (mDesiredDeviceNameToOpen != "") {
-				connect(_getDesiredPortToOpen(), true);
-			}
-			else {
-				connect(midiIn_Port, true);
-				//connect(0, true);
-			}
-		}
-		mNextCheckMillis = emillis + 3000;
+	if (bAutoReconnect)
+	{
+		refresh();
 	}
+
+	//--
 
 	if (mSelectedParam && mSelectedParam->bNeedsTextPrompt) {
 
@@ -824,7 +829,8 @@ void ofxMidiParams::draw() {
 
 	if (bShowMapping)
 	{
-		ofPushMatrix(); 
+		ofPushMatrix();
+		ofPushStyle();
 		{
 			//ofTranslate(posGui.get().x, posGui.get().y);
 			ofTranslate(pos.x, pos.y);
@@ -861,6 +867,7 @@ void ofxMidiParams::draw() {
 			}
 			ofDrawCircle(mHeaderRect.width - (mHeaderRect.height / 2), mHeaderRect.height / 2, mHeaderRect.height / 4);
 
+#ifdef USE_OFX_GUI__MIDI_PARAMS
 			// save button
 			ofSetColor(colorFill3);
 			ofDrawRectangle(mSaveBtnRect);
@@ -906,6 +913,7 @@ void ofxMidiParams::draw() {
 				ofDrawBitmapString("GUI", mShowGuiInternalRect.x + 6, mShowGuiInternalRect.getCenter().y + 4);
 				ofDrawBitmapString(s, mMinimizeRect.x + 6, mMinimizeRect.getCenter().y + 4);
 			}
+#endif
 
 			if (!bMinimize)
 			{
@@ -927,6 +935,8 @@ void ofxMidiParams::draw() {
 				{
 					ofDrawBitmapString(messStr, mMessageRect.x + 8, mMessageRect.y + 18);
 				}
+
+				//-
 
 				// assigned params
 				for (int i = 0; i < mAssocParams.size(); i++)
@@ -986,7 +996,9 @@ void ofxMidiParams::draw() {
 
 				}
 			}
-		} ofPopMatrix();
+		}
+		ofPopStyle();
+		ofPopMatrix();
 	}
 
 	if (bShowGuiInternal)
@@ -1002,6 +1014,41 @@ void ofxMidiParams::draw() {
 		gui.setPosition(p.x + w, p.y);
 		gui.draw();
 #endif
+	}
+}
+
+//--------------------------------------------------------------
+void ofxMidiParams::refresh() {
+	uint64_t emillis = ofGetElapsedTimeMillis();
+	if (emillis >= mNextCheckMillis) {
+		//ofLogWarning() << __FUNCTION__ << " ";
+
+		vector<string> tportNames = midiIn.getInPortList();
+		bool bopen = midiIn.isOpen();
+		if (tportNames.size() == 0) {
+			if (bopen) {
+				disconnect();
+			}
+		}
+
+		bopen = midiIn.isOpen();
+		if (bopen && mDesiredDeviceNameToOpen != "") {
+			int tport = _getDesiredPortToOpen();
+			if (tport < 0) disconnect();
+		}
+
+		//cout << "bopen: " << bopen << " port: " << midiIn.getPort() << " | " << ofGetFrameNum() << endl;
+
+		if (!bConnected && bTryReconnect) {
+			if (mDesiredDeviceNameToOpen != "") {
+				connect(_getDesiredPortToOpen(), true);
+			}
+			else {
+				connect(midiIn_Port, true);
+				//connect(0, true);
+			}
+		}
+		mNextCheckMillis = emillis + 3000;
 	}
 }
 
@@ -1096,6 +1143,7 @@ void ofxMidiParams::mousePressed(int x, int y, int button) {
 	bDragging = false;
 	bool bate = false;
 
+#ifdef USE_OFX_GUI__MIDI_PARAMS
 	if (mSaveBtnRect.inside(mp)) {
 		save();
 		bate = true;
@@ -1108,6 +1156,7 @@ void ofxMidiParams::mousePressed(int x, int y, int button) {
 	if (mMinimizeRect.inside(mp)) {
 		bMinimize = !bMinimize;
 	}
+#endif
 
 	if (!bate && mHeaderRect.inside(mp)) {
 		mMouseOffset = mp;
@@ -1151,68 +1200,86 @@ void ofxMidiParams::drawImGui()
 			static bool bOpen0 = true;
 			ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
 			if (guiManager.bAutoResize) window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
+
 			guiManager.beginWindow(n.c_str(), &bOpen0, window_flags);
 			{
-				//ImGui::Dummy(ImVec2(0, 5)); // spacing
-
 				float _h = WIDGETS_HEIGHT;
 				float _w100 = getWidgetsWidth(1);
 				float _w50 = getWidgetsWidth(2);
 
+				ImGui::Text("MIDI INPUT");
+
 				ofxImGuiSurfing::AddBigToggle(bShowMapping, _w100, _h / 2, false);
-				ofxImGuiSurfing::AddBigButton(bSave, _w100, _h / 2);
+				ofxImGuiSurfing::AddBigButton(bLoad, _w50, _h / 2);
+				ImGui::SameLine();
+				ofxImGuiSurfing::AddBigButton(bSave, _w50, _h / 2);
 
 				//-
 
+				bool bOpen = false;
+				ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
+				_flagt |= ImGuiTreeNodeFlags_Framed;
+				
+				if (ImGui::TreeNodeEx("MIDI", _flagt))
 				{
-					bool bOpen = false;
-					ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
-					_flagt |= ImGuiTreeNodeFlags_Framed;
-					if (ImGui::TreeNodeEx("CONNECT", _flagt))
 					{
-						_w100 = getWidgetsWidth(1);
-						_w50 = getWidgetsWidth(2);
+						bool bOpen = true;
+						ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
+						_flagt |= ImGuiTreeNodeFlags_Framed;
 
-						string ni = "IN  " + midiIn_Port_name.get();
-						ImGui::Text(ni.c_str());
-						if (ImGui::Button("ON", ImVec2(_w50, _h / 2)))
+						if (ImGui::TreeNodeEx("CONNECT", _flagt))
 						{
-							midiIn.openPort(midiIn_Port);
-							midiIn_Port_name = midiIn.getName();
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("OFF", ImVec2(_w50, _h / 2)))
-						{
-							disconnect();
-							midiIn_Port_name = "";
-						}
+							_w100 = getWidgetsWidth(1);
+							_w50 = getWidgetsWidth(2);
 
-						//-
+							string ni = "INPUT:  " + midiIn_Port_name.get();
+							ImGui::Text(ni.c_str());
+							if (ImGui::Button("ON", ImVec2(_w50, _h / 2)))
+							{
+								midiIn_Port = midiIn_Port;
 
-						string no = "OUT " + midiOut_Port_name.get();
-						ImGui::Text(no.c_str());
-						if (ImGui::Button("ON ", ImVec2(_w50, _h / 2)))
-						{
-							midiOut.openPort(midiOut_Port);
-							midiOut_Port_name = midiOut.getName();
+								//midiIn.openPort(midiIn_Port);
+								//midiIn_Port_name = midiIn.getName();
+							}
+							ImGui::SameLine();
+							if (ImGui::Button("OFF", ImVec2(_w50, _h / 2)))
+							{
+								disconnect();
+								midiIn_Port_name = "";
+							}
+
+							//-
+
+							string no = "OUTPUT: " + midiOut_Port_name.get();
+							ImGui::Text(no.c_str());
+							if (ImGui::Button("ON ", ImVec2(_w50, _h / 2)))
+							{
+								midiOut_Port = midiOut_Port;
+
+								//midiOut.openPort(midiOut_Port);
+								//midiOut_Port_name = midiOut.getName();
+							}
+							ImGui::SameLine();
+							if (ImGui::Button("OFF ", ImVec2(_w50, _h / 2)))
+							{
+								midiOut.closePort();
+								midiOut_Port_name = "";
+							}
+							ImGui::TreePop();
 						}
-						ImGui::SameLine();
-						if (ImGui::Button("OFF ", ImVec2(_w50, _h / 2)))
-						{
-							midiOut.closePort();
-							midiOut_Port_name = "";
-						}
-						ImGui::TreePop();
 					}
-				}
 
-				//-
+					//-
 
-				{
-					bool bOpen = false;
-					ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
-					_flagt |= ImGuiTreeNodeFlags_Framed;
-					ofxImGuiSurfing::AddGroup(params_MidiPorts, _flagt);
+					{
+						bool bOpen = false;
+						ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
+						_flagt |= ImGuiTreeNodeFlags_Framed;
+
+						ofxImGuiSurfing::AddGroup(params_MidiPorts, _flagt);
+					}
+
+					ImGui::TreePop();
 				}
 
 				//-
@@ -1227,11 +1294,28 @@ void ofxMidiParams::drawImGui()
 					_w100 = getWidgetsWidth(1);
 					_w50 = getWidgetsWidth(2);
 
+					ofxImGuiSurfing::AddToggleRoundedButton(bAutoReconnect);
 					//ofxImGuiSurfing::AddBigButton(bPopulate, _w100, _h / 2);
+					//static bool bClear = false;
+					//ofxImGuiSurfing::ToggleRoundedButton("Clear", &bClear);
+					//{
+					//	if (bClear) bClear = false;
+					//	clear();
+					//}
 					ofxImGuiSurfing::AddToggleRoundedButton(bAutoSave);
 
-					ImGui::Text(path_Global.c_str());
-					ImGui::Text(filenameSettings.c_str());
+					bool bOpen = false;
+					ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
+					_flagt |= ImGuiTreeNodeFlags_Framed;
+					if (ImGui::TreeNodeEx("PATH SETTINGS", _flagt))
+					{
+						ImGui::Indent();
+						ImGui::Text(path_Global.c_str());
+						ImGui::Text(filenameSettings.c_str());
+						ImGui::Unindent();
+						ImGui::TreePop();
+					}
+
 					ImGui::Dummy(ImVec2(0, 5)); // spacing
 
 					//--
