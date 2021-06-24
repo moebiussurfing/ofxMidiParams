@@ -282,10 +282,11 @@ void ofxMidiParams::Changed_Controls_Out(ofAbstractParameter &e)
 			//bc I have only an Akai mpd218 with illuminated toggles. 
 			//not motorized/illuminated knobs. so i don't need midi cc's.
 
-			if (aparam.type() == typeid(ofParameter<bool>).name()) {
+			if (aparam.type() == typeid(ofParameter<bool>).name())
+			{
 				ofParameter<bool> b = aparam.cast<bool>();
 
-				int pitch = mAssocParams[i]->midiId - 512;
+				int pitch = mAssocParams[i]->midiId - 512;//?
 				//auto type2 = mAssocParams[i]->ptype;//bool
 				//auto name2 = mAssocParams[i]->displayMidiName;
 
@@ -833,16 +834,18 @@ void ofxMidiParams::draw() {
 		ofPushStyle();
 		{
 			//ofTranslate(posGui.get().x, posGui.get().y);
+
 			ofTranslate(pos.x, pos.y);
 
 			// device name
+			string tittle = "MAPPING | ";
 			string hstring = midiIn_Port_name;
 			//string hstring = mDesiredDeviceNameToOpen;
 
 			if (hstring == "") {
 				hstring = "No MIDI Device.";
 			}
-			hstring = "MIDI IN: " + hstring;
+			hstring = "MIDI_IN: " + hstring;
 
 			// header
 			ofSetColor(30);
@@ -852,11 +855,11 @@ void ofxMidiParams::draw() {
 			ofSetColor(225);
 			if (myFont.isLoaded())
 			{
-				myFont.drawString(hstring, mHeaderRect.x + 6, mHeaderRect.y + mHeaderRect.height / 2 + 6);
+				myFont.drawString(tittle + hstring, mHeaderRect.x + 6, mHeaderRect.y + mHeaderRect.height / 2 + 6);
 			}
 			else
 			{
-				ofDrawBitmapString(hstring, mHeaderRect.x + 6, mHeaderRect.y + mHeaderRect.height / 2 + 6);
+				ofDrawBitmapString(tittle + hstring, mHeaderRect.x + 6, mHeaderRect.y + mHeaderRect.height / 2 + 6);
 			}
 
 			// green circle
@@ -1219,7 +1222,7 @@ void ofxMidiParams::drawImGui()
 				bool bOpen = false;
 				ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
 				_flagt |= ImGuiTreeNodeFlags_Framed;
-				
+
 				if (ImGui::TreeNodeEx("MIDI", _flagt))
 				{
 					{
@@ -1286,6 +1289,8 @@ void ofxMidiParams::drawImGui()
 
 				ImGui::Dummy(ImVec2(0, 5)); // spacing
 
+				static bool bLockMappgingPanel = true;
+
 				ofxImGuiSurfing::AddToggleRoundedButton(guiManager.bExtra);
 				if (guiManager.bExtra)
 				{
@@ -1294,6 +1299,7 @@ void ofxMidiParams::drawImGui()
 					_w100 = getWidgetsWidth(1);
 					_w50 = getWidgetsWidth(2);
 
+					ofxImGuiSurfing::ToggleRoundedButton("Lock Mapping Panel", &bLockMappgingPanel);
 					ofxImGuiSurfing::AddToggleRoundedButton(bAutoReconnect);
 					//ofxImGuiSurfing::AddBigButton(bPopulate, _w100, _h / 2);
 					//static bool bClear = false;
@@ -1324,6 +1330,20 @@ void ofxMidiParams::drawImGui()
 					if (guiManager.bExtra) guiManager.drawAdvancedSubPanel();
 
 					ImGui::Unindent();
+				}
+
+				//----
+
+				// get window position for advanced layout linked position
+				if (bLockMappgingPanel)
+				{
+					float pad = 0;
+					auto posx = ImGui::GetWindowPos().x;
+					auto posy = ImGui::GetWindowPos().y;
+					float __w = ImGui::GetWindowWidth();
+					float __h = ImGui::GetWindowHeight();
+					pos.x = posx + __w + pad;
+					pos.y = posy;
 				}
 			}
 			guiManager.endWindow();

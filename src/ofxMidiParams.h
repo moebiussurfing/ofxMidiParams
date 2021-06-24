@@ -94,7 +94,7 @@ private:
 	ofParameter<bool> bShowGuiInternal{ "Show Internal", true };
 	ofParameter<bool> bShowMapping{ "MAPPING", true };
 	ofParameter<bool>  bAutoName{ "Auto Name Learn", true };
-	ofParameter<bool>  bAutoSave{ "Auto Save", false };
+	ofParameter<bool>  bAutoSave{ "Auto Save", true };
 	ofParameter<bool>  bAutoReconnect{ "Auto Reconnect", false };
 	ofParameter<bool> bMinimize{ "Minimize", false };
 	ofParameter<bool>  bSave{ "SAVE", false };
